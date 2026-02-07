@@ -8,14 +8,83 @@ const SHEET_RECORDS = '학습기록';
 const SHEET_SETTINGS = '설정';
 
 /**
- * Serves the HTML file for the web app.
+ * Serves the HTML file for the web app or handles API calls.
  */
 function doGet(e) {
+  // API 호출 처리
+  if (e && e.parameter && e.parameter.action) {
+    return handleApiRequest(e);
+  }
+  
+  // HTML 페이지 반환
   return HtmlService.createTemplateFromFile('index')
     .evaluate()
     .setTitle('모의고사 문제집 앱')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * API 요청 처리
+ */
+function handleApiRequest(e) {
+  const action = e.parameter.action;
+  const argsStr = e.parameter.args || '[]';
+  let args = [];
+  
+  try {
+    args = JSON.parse(decodeURIComponent(argsStr));
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ error: 'Invalid args' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  let result;
+  
+  try {
+    switch (action) {
+      case 'getProblems':
+        result = getProblems(args[0]);
+        break;
+      case 'uploadProblems':
+        result = uploadProblems(args[0]);
+        break;
+      case 'updateProblem':
+        result = updateProblem(args[0]);
+        break;
+      case 'deleteProblem':
+        result = deleteProblem(args[0]);
+        break;
+      case 'deleteWorkbook':
+        result = deleteWorkbook(args[0]);
+        break;
+      case 'updateWorkbookTitle':
+        result = updateWorkbookTitle(args[0], args[1]);
+        break;
+      case 'saveRecord':
+        result = saveRecord(args[0]);
+        break;
+      case 'getRecords':
+        result = getRecords();
+        break;
+      case 'getUserSettings':
+        result = getUserSettings();
+        break;
+      case 'saveUserSettings':
+        result = saveUserSettings(args[0]);
+        break;
+      case 'getWorkbooks':
+        result = getWorkbooks();
+        break;
+      default:
+        result = { error: 'Unknown action: ' + action };
+    }
+  } catch (err) {
+    result = { error: err.toString() };
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 /**

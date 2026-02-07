@@ -1,8 +1,12 @@
 /**
  * API Wrapper for Google Apps Script
- * Handles separation between local development and production CAS environment.
+ * Handles separation between local development and production environments.
  */
 const STORAGE_KEY = 'gemini_cbt_data_v1';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxpAXACMrXchcSixEPnxeM3JtWRRYUbOT4lw0gO9oguU1fvuhm5gtDV5HjFSr2VAQA/exec';
+
+// Set to true to use Google Sheets backend, false for localStorage only
+const USE_SHEETS_BACKEND = true;
 
 const api = {
     isProduction: typeof google !== 'undefined' && google.script,
@@ -28,13 +32,34 @@ const api = {
 
     run: function (functionName, ...args) {
         return new Promise((resolve, reject) => {
+            // GAS iframe 환경 (Apps Script 내부에서 실행)
             if (this.isProduction) {
                 google.script.run
                     .withSuccessHandler(resolve)
                     .withFailureHandler(reject)
                 [functionName](...args);
-            } else {
-                // Simulate network delay
+            }
+            // GitHub Pages 등 외부에서 Sheets 백엔드 사용
+            else if (USE_SHEETS_BACKEND && GAS_WEB_APP_URL) {
+                const url = `${GAS_WEB_APP_URL}?action=${functionName}&args=${encodeURIComponent(JSON.stringify(args))}`;
+                fetch(url)
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log(`[GAS API] ${functionName} response:`, data);
+                        resolve(data);
+                    })
+                    .catch(err => {
+                        console.error(`[GAS API] ${functionName} error:`, err);
+                        // Fallback to mock
+                        if (this.mockHandlers[functionName]) {
+                            resolve(this.mockHandlers[functionName](...args));
+                        } else {
+                            reject(err);
+                        }
+                    });
+            }
+            // 로컬 개발 (Mock 데이터 사용)
+            else {
                 console.log(`[MockAPI] Calling ${functionName} with args:`, args);
                 setTimeout(() => {
                     this.mockHandlers[functionName]
