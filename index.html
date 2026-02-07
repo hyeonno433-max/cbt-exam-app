@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모의고사 문제집 앱 - 공조냉동기계산업기사</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <!-- Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+    <!-- KaTeX Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Tesseract OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand" style="cursor:pointer;" onclick="router.navigate('dashboard')">
+                <span class="material-icons-round">psychology</span>
+                <h1>모의고사 문제집</h1>
+            </div>
+            <nav class="menu">
+                <button class="menu-item active" data-page="dashboard">
+                    <span class="material-icons-round">dashboard</span> 대시보드
+                </button>
+                <button class="menu-item" data-page="cbt">
+                    <span class="material-icons-round">quiz</span> 실전 모의고사
+                </button>
+                <button class="menu-item" data-page="review">
+                    <span class="material-icons-round">rate_review</span> 오답 노트
+                </button>
+                <button class="menu-item" data-page="bulk-upload">
+                    <span class="material-icons-round">post_add</span> 문제 등록
+                </button>
+                <button class="menu-item" data-page="manage">
+                    <span class="material-icons-round">edit_note</span> 문제 관리
+                </button>
+            </nav>
+            <div class="user-profile">
+                <div class="avatar">U</div>
+                <div class="info">
+                    <span class="name">수험생</span>
+                    <span class="role">D-Day 설정</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div id="content-area" class="content-area">
+                <!-- Page content will be injected here -->
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>데이터 로딩 중...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3 id="modal-title">알림</h3>
+            <div id="modal-content" class="modal-content"></div>
+            <div id="modal-actions" class="modal-actions">
+                <!-- Buttons injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF.js for PDF Text Extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Set worker src
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+
+    <!-- Scripts -->
+    <script src="js/mock_data.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/exam.js"></script>
+    <script src="js/bulk_upload.js"></script>
+    <script src="js/problem_manager.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/review.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>

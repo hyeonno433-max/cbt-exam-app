@@ -1,0 +1,1182 @@
+@import url('https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;700&display=swap');
+
+:root {
+    /* Colors */
+    --primary-color: #4f46e5;
+    --primary-light: #818cf8;
+    --primary-dark: #3730a3;
+    --secondary-color: #10b981;
+    --accent-color: #f59e0b;
+    --danger-color: #ef4444;
+
+    --bg-color: #f3f4f6;
+    --surface-color: #ffffff;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+
+    /* Spacing */
+    --space-xs: 0.5rem;
+    --space-sm: 0.75rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+
+    /* Radius */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 1rem;
+    --radius-full: 9999px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', 'Noto Sans KR', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    line-height: 1.5;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#app {
+    display: flex;
+    height: 100%;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    background-color: var(--surface-color);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-lg);
+    transition: width 0.3s ease;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xl);
+    color: var(--primary-color);
+}
+
+.brand h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.menu {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.menu-item:hover {
+    background-color: var(--bg-color);
+    color: var(--primary-color);
+}
+
+.menu-item.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    background-color: var(--primary-light);
+    color: white;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.info {
+    display: flex;
+    flex-direction: column;
+}
+
+.info .name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.info .role {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.top-bar {
+    height: 64px;
+    background-color: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-xl);
+}
+
+.top-bar h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.actions {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: var(--space-xs);
+    border-radius: var(--radius-full);
+    transition: background 0.2s;
+}
+
+.icon-btn:hover {
+    background-color: var(--bg-color);
+    color: var(--primary-color);
+}
+
+.content-area {
+    flex: 1;
+    padding: var(--space-xl);
+    overflow-y: auto;
+    background-color: var(--bg-color);
+}
+
+/* Utilities */
+.card {
+    background-color: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--space-md);
+}
+
+.btn {
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: var(--radius-md);
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.grid-cols-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+}
+
+/* Loading State */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: var(--space-md);
+}
+
+/* ... previous styles ... */
+
+/* CBT Exam Mode Layout */
+.exam-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    /* Center: Question, Right: Status */
+    gap: var(--space-lg);
+    height: 100%;
+    /* overflow: hidden; removed - was causing button clipping */
+}
+
+/* Center Panel: Question Area */
+.exam-panel-center {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    gap: var(--space-md);
+}
+
+.question-card {
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    box-shadow: var(--shadow-md);
+}
+
+.choice-item {
+    display: flex;
+    align-items: center;
+    padding: var(--space-md);
+    margin-bottom: var(--space-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.choice-item:hover {
+    background-color: var(--bg-color);
+    border-color: var(--primary-light);
+}
+
+.choice-item.selected {
+    background-color: var(--primary-light);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.choice-item.correct {
+    background-color: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
+}
+
+.choice-item.incorrect {
+    background-color: var(--danger-color);
+    color: white;
+    border-color: var(--danger-color);
+}
+
+/* Right Panel: Status & OMR */
+.exam-panel-right {
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    border: 1px solid var(--border-color);
+    max-height: 100%;
+    overflow-y: auto;
+    /* Allow panel itself to scroll if needed */
+}
+
+/* Footer for Buttons - simple flex item */
+.exam-panel-footer {
+    margin-top: auto;
+    flex-shrink: 0;
+    padding-top: var(--space-sm);
+}
+
+.timer-box {
+    text-align: center;
+    padding: var(--space-md);
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+/* OMR List Style */
+.omr-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: var(--space-xs);
+    border-top: 1px solid var(--border-color);
+}
+
+.omr-row {
+    display: flex;
+    align-items: center;
+    padding: var(--space-xs) var(--space-sm);
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.1s;
+}
+
+.omr-row:hover {
+    background-color: var(--bg-color);
+}
+
+.omr-row.active-row {
+    background-color: #eff6ff;
+    /* Light blue background for current question */
+}
+
+.omr-num {
+    width: 30px;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-align: center;
+}
+
+.omr-options {
+    flex: 1;
+    display: flex;
+    justify-content: space-around;
+    gap: 4px;
+}
+
+.omr-circle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid #d1d5db;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.1s;
+    background-color: white;
+}
+
+.omr-circle:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.omr-circle.selected {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+}
+
+/* Result Page Styles */
+.result-container {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.score-card {
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.score-card.pass {
+    border-top: 5px solid var(--secondary-color);
+}
+
+.score-card.fail {
+    border-top: 5px solid var(--danger-color);
+}
+
+.score-badge {
+    display: inline-block;
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-full);
+    font-weight: 700;
+    margin-bottom: var(--space-md);
+}
+
+.score-badge.pass {
+    background-color: #d1fae5;
+    color: var(--secondary-color);
+}
+
+.score-badge.fail {
+    background-color: #fee2e2;
+    color: var(--danger-color);
+}
+
+.total-score {
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: var(--space-sm);
+    color: var(--text-primary);
+}
+
+.total-score span {
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+.analysis-card {
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    border: 1px solid var(--border-color);
+}
+
+.subject-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.subject-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.subject-name {
+    font-weight: 500;
+}
+
+.subject-score {
+    font-weight: 700;
+}
+
+.subject-score.high {
+    color: var(--secondary-color);
+}
+
+.subject-score.mid {
+    color: var(--accent-color);
+}
+
+.subject-score.low {
+    color: var(--danger-color);
+}
+
+.action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+}
+
+/* Review Mode Styles */
+.review-mode .choice-item {
+    cursor: default;
+}
+
+.review-mode .choice-item:hover {
+    background-color: transparent;
+    border-color: var(--border-color);
+}
+
+.review-mode .choice-item.correct-answer {
+    background-color: #d1fae5;
+    border-color: var(--secondary-color);
+    color: var(--text-primary);
+    position: relative;
+}
+
+.review-mode .choice-item.wrong-answer {
+    background-color: #fee2e2;
+    border-color: var(--danger-color);
+    color: var(--text-primary);
+}
+
+.explanation-card {
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin-top: var(--space-lg);
+    animation: fadeIn 0.3s ease;
+}
+
+.explanation-title {
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: var(--space-xs);
+    display: flex;
+    align-items: center;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+.modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-box {
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    width: 90%;
+    max-width: 400px;
+    box-shadow: var(--shadow-lg);
+    transform: scale(1);
+    transition: transform 0.2s;
+}
+
+.modal-overlay.hidden .modal-box {
+    transform: scale(0.95);
+}
+
+.modal-content {
+    margin: var(--space-md) 0 var(--space-xl) 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+}
+
+.input-field {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* 
+   --------------------------------------------------------------
+   EXAM SETUP STYLES - REFERENCE IMAGE DESIGN
+   --------------------------------------------------------------
+*/
+
+.workbook-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 40px;
+    padding: 10px;
+    justify-content: flex-start;
+}
+
+.workbook-card {
+    /* Mobile: 1 card per row */
+    width: 100%;
+
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 420px;
+    /* Taller card */
+    position: relative;
+    border: none;
+}
+
+.workbook-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.15);
+}
+
+/* Tablet: 2 cards */
+@media (min-width: 640px) {
+    .workbook-card {
+        width: calc(50% - 12px);
+    }
+}
+
+/* Desktop: 3 cards */
+@media (min-width: 1024px) {
+    .workbook-card {
+        width: calc(33.33% - 16px);
+    }
+}
+
+/* Large Desktop: 5 cards */
+@media (min-width: 1400px) {
+    .workbook-card {
+        width: calc(20% - 20px);
+    }
+}
+
+/* 1. Header Image Area */
+.wb-card-image {
+    height: 55%;
+    min-height: 220px;
+    position: relative;
+    overflow: hidden;
+    /* Diagonal Pattern Overlay */
+    background-image:
+        linear-gradient(45deg, rgba(255, 255, 255, 0.08) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.08) 75%, transparent 75%, transparent),
+        linear-gradient(-45deg, rgba(255, 255, 255, 0.08) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.08) 75%, transparent 75%, transparent);
+    background-size: 60px 60px;
+}
+
+/* Pattern Variable */
+.workbook-card {
+    --pattern: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.1) 1px, transparent 0, transparent 50%);
+}
+
+/* Color Variations */
+.workbook-card:nth-child(3n+1) .wb-card-image {
+    background-color: #14b8a6;
+    background-image: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%), var(--pattern);
+}
+
+/* Teal */
+.workbook-card:nth-child(3n+2) .wb-card-image {
+    background-color: #3b82f6;
+    background-image: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%), var(--pattern);
+}
+
+/* Blue */
+.workbook-card:nth-child(3n+3) .wb-card-image {
+    background-color: #8b5cf6;
+    background-image: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%), var(--pattern);
+}
+
+/* Purple */
+
+/* 2. Content Area */
+.wb-card-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background: white;
+    justify-content: space-between;
+}
+
+/* Title */
+.wb-card-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    font-family: 'Noto Sans KR', sans-serif;
+    word-break: keep-all;
+}
+
+/* Info */
+.wb-card-info {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    margin-bottom: 24px;
+    font-weight: 500;
+}
+
+/* Action Button */
+.wb-card-btn {
+    width: 100%;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: white;
+    transition: filter 0.2s;
+    text-align: center;
+}
+
+.wb-card-btn:hover {
+    filter: brightness(1.1);
+}
+
+/* Button Colors */
+.workbook-card:nth-child(3n+1) .wb-card-btn {
+    background-color: #0d9488;
+}
+
+.workbook-card:nth-child(3n+2) .wb-card-btn {
+    background-color: #2563eb;
+}
+
+.workbook-card:nth-child(3n+3) .wb-card-btn {
+    background-color: #7c3aed;
+}
+
+border-radius: var(--radius-lg);
+padding: var(--space-xl);
+width: 90%;
+max-width: 400px;
+box-shadow: var(--shadow-lg);
+transform: scale(1);
+transition: transform 0.2s;
+}
+
+.modal-overlay.hidden .modal-box {
+    transform: scale(0.95);
+}
+
+.modal-content {
+    margin: var(--space-md) 0 var(--space-xl) 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    transform: translateY(10px);
+}
+
+to {
+    opacity: 1;
+    transform: translateY(0);
+}
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+.modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Exam Setup Styles - Reference Image Design */
+.workbook-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 40px;
+    padding: 10px;
+    justify-content: flex-start;
+}
+
+.workbook-card {
+    /* Mobile: 1 card per row */
+    width: 100%;
+
+    background: white;
+    border-radius: 24px;
+    /* More rounded */
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 380px;
+    /* Taller card */
+    position: relative;
+    border: none;
+}
+
+.workbook-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.15);
+}
+
+/* Tablet: 2 cards */
+@media (min-width: 640px) {
+    .workbook-card {
+        width: calc(50% - 12px);
+    }
+}
+
+/* Desktop: 3 cards */
+@media (min-width: 1024px) {
+    .workbook-card {
+        width: calc(33.33% - 16px);
+    }
+}
+
+/* Large Desktop: 5 cards (as requested) */
+@media (min-width: 1400px) {
+    .workbook-card {
+        width: calc(20% - 20px);
+    }
+}
+
+/* 1. Header Image Area */
+.wb-card-image {
+    height: 55%;
+    /* Occupy significant top portion */
+    min-height: 200px;
+    position: relative;
+    overflow: hidden;
+    /* Diagonal Pattern Overlay */
+    background-image:
+        linear-gradient(45deg, rgba(255, 255, 255, 0.08) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.08) 75%, transparent 75%, transparent),
+        linear-gradient(-45deg, rgba(255, 255, 255, 0.08) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.08) 75%, transparent 75%, transparent);
+    background-size: 60px 60px;
+}
+
+/* Color Variations (Teal, Blue, Purple) */
+.workbook-card:nth-child(3n+1) .wb-card-image {
+    background-color: #14b8a6;
+    background-image: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%), var(--pattern);
+}
+
+/* Teal */
+.workbook-card:nth-child(3n+2) .wb-card-image {
+    background-color: #3b82f6;
+    background-image: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%), var(--pattern);
+}
+
+/* Blue */
+.workbook-card:nth-child(3n+3) .wb-card-image {
+    background-color: #8b5cf6;
+    background-image: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%), var(--pattern);
+}
+
+/* Purple */
+
+/* Define pattern variable for usage above */
+.workbook-card {
+    --pattern: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.1) 1px, transparent 0, transparent 50%);
+    /* Actually simple diagonal lines might be better for "Geometric" */
+}
+
+/* 2. Content Area */
+.wb-card-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background: white;
+    justify-content: space-between;
+}
+
+/* Title */
+.wb-card-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    font-family: 'Noto Sans KR', sans-serif;
+    word-break: keep-all;
+}
+
+/* Info */
+.wb-card-info {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    margin-bottom: 24px;
+    font-weight: 500;
+}
+
+/* Action Button */
+.wb-card-btn {
+    width: 100%;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: white;
+    transition: filter 0.2s;
+    text-align: center;
+}
+
+.wb-card-btn:hover {
+    filter: brightness(1.1);
+}
+
+/* Button Colors match header */
+.workbook-card:nth-child(3n+1) .wb-card-btn {
+    background-color: #0d9488;
+}
+
+.workbook-card:nth-child(3n+2) .wb-card-btn {
+    background-color: #2563eb;
+}
+
+/* Button Colors match header */
+.workbook-card:nth-child(3n+1) .wb-card-btn {
+    background-color: #0d9488;
+}
+
+.workbook-card:nth-child(3n+2) .wb-card-btn {
+    background-color: #2563eb;
+}
+
+.workbook-card:nth-child(3n+3) .wb-card-btn {
+    background-color: #7c3aed;
+}
+
+/* 
+   --------------------------------------------------------------
+   EXAM SETUP STYLES - REFERENCE IMAGE DESIGN (FLEXBOX RESTORED)
+   --------------------------------------------------------------
+*/
+
+.workbook-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 40px;
+    padding: 10px;
+    justify-content: flex-start;
+}
+
+.workbook-card {
+    /* Mobile: 1 card per row */
+    width: 100%;
+
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 420px;
+    position: relative;
+    border: none;
+    /* Ensure no weird aspect ratio overrides */
+    aspect-ratio: auto;
+}
+
+.workbook-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.15);
+}
+
+/* Tablet: 2 cards */
+@media (min-width: 640px) {
+    .workbook-card {
+        width: calc(50% - 12px);
+    }
+}
+
+/* Desktop: 3 cards */
+@media (min-width: 1024px) {
+    .workbook-card {
+        width: calc(33.33% - 16px);
+    }
+}
+
+/* Large Desktop: 5 cards */
+@media (min-width: 1400px) {
+    .workbook-card {
+        width: calc(20% - 20px);
+    }
+}
+
+/* 1. Header Image Area */
+.wb-card-image {
+    height: 55%;
+    min-height: 220px;
+    position: relative;
+    overflow: hidden;
+    /* Diagonal Pattern Overlay */
+    background-image:
+        linear-gradient(45deg, rgba(255, 255, 255, 0.08) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.08) 75%, transparent 75%, transparent),
+        linear-gradient(-45deg, rgba(255, 255, 255, 0.08) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.08) 75%, transparent 75%, transparent);
+    background-size: 60px 60px;
+}
+
+/* Pattern Variable */
+.workbook-card {
+    --pattern: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.1) 1px, transparent 0, transparent 50%);
+}
+
+/* Color Variations */
+.workbook-card:nth-child(3n+1) .wb-card-image {
+    background-color: #14b8a6;
+    background-image: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%), var(--pattern);
+}
+
+/* Teal */
+.workbook-card:nth-child(3n+2) .wb-card-image {
+    background-color: #3b82f6;
+    background-image: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%), var(--pattern);
+}
+
+/* Blue */
+.workbook-card:nth-child(3n+3) .wb-card-image {
+    background-color: #8b5cf6;
+    background-image: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%), var(--pattern);
+}
+
+/* Purple */
+
+/* 2. Content Area */
+.wb-card-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background: white;
+    justify-content: space-between;
+}
+
+/* Title */
+.wb-card-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    font-family: 'Noto Sans KR', sans-serif;
+    word-break: keep-all;
+}
+
+/* Info */
+.wb-card-info {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    margin-bottom: 24px;
+    font-weight: 500;
+}
+
+/* Action Button */
+.wb-card-btn {
+    width: 100%;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: white;
+    transition: filter 0.2s;
+    text-align: center;
+}
+
+.wb-card-btn:hover {
+    filter: brightness(1.1);
+}
+
+/* Button Colors */
+.workbook-card:nth-child(3n+1) .wb-card-btn {
+    background-color: #0d9488;
+}
+
+.workbook-card:nth-child(3n+2) .wb-card-btn {
+    background-color: #2563eb;
+}
+
+.workbook-card:nth-child(3n+3) .wb-card-btn {
+    background-color: #7c3aed;
+}
