@@ -316,16 +316,38 @@ const Exam = {
         // Calculate Score
         let correctCount = 0;
         const subjectScores = {}; // { subject: { total: 0, correct: 0 } }
+        const correctProblemIds = []; // 정답 맞춘 문제 ID 목록
 
         problems.forEach(p => {
             const isCorrect = userAnswers[p.problemId] === p.answer;
-            if (isCorrect) correctCount++;
+            if (isCorrect) {
+                correctCount++;
+                correctProblemIds.push(p.problemId); // 정답 맞춘 문제 ID 저장
+            }
 
             // Subject Analysis
             if (!subjectScores[p.subject]) subjectScores[p.subject] = { total: 0, correct: 0 };
             subjectScores[p.subject].total++;
             if (isCorrect) subjectScores[p.subject].correct++;
         });
+
+        // 🎯 정답 맞춘 문제를 오답 기록에서 제거
+        if (correctProblemIds.length > 0 && MOCK_DATA.records) {
+            MOCK_DATA.records.forEach(record => {
+                if (record.userAnswers) {
+                    correctProblemIds.forEach(pId => {
+                        // 해당 문제의 오답 기록 삭제 (정답으로 업데이트)
+                        const problem = MOCK_DATA.problems.find(p => p.problemId === pId);
+                        if (problem && record.userAnswers[pId] !== undefined) {
+                            // 정답으로 업데이트하여 오답 노트에서 제외되도록 함
+                            record.userAnswers[pId] = problem.answer;
+                        }
+                    });
+                }
+            });
+            // 변경사항 저장
+            api.run('syncRecords', MOCK_DATA.records);
+        }
 
         const score = Math.round((correctCount / totalProblems) * 100);
         // Is pass? Average 60
@@ -432,7 +454,6 @@ const Exam = {
                     <div class="exam-panel-right">
                         <div class="card" style="text-align:center; padding:var(--space-md); margin-bottom:var(--space-md); border:1px solid var(--border-color);">
                             <h4 style="color:var(--text-secondary); margin-bottom:5px;">오답 노트 모드</h4>
-                            <button class="btn btn-primary" onclick="router.navigate('result')">결과 화면으로</button>
                         </div>
                         <div class="omr-grid" id="omr-container"></div>
                     </div>

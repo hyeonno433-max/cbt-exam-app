@@ -6,7 +6,7 @@ const STORAGE_KEY = 'gemini_cbt_data_v1';
 const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzvcqcdnnWGYtznnn7VcHPaGfbFYeki60I9wHSijtuyO7ErGxhmsTzzmAM5EkzmIUEF/exec';
 
 // Set to true to use Google Sheets backend, false for localStorage only
-const USE_SHEETS_BACKEND = true;
+const USE_SHEETS_BACKEND = false;
 
 const api = {
     isProduction: typeof google !== 'undefined' && google.script,
@@ -61,7 +61,7 @@ const api = {
                         // we'll just assume success for write operations
                         // and fallback to mock for read operations
                         if (['uploadProblems', 'updateProblem', 'deleteProblem', 'deleteWorkbook',
-                            'updateWorkbookTitle', 'saveRecord', 'saveUserSettings'].includes(functionName)) {
+                            'updateWorkbookTitle', 'saveRecord', 'saveUserSettings', 'syncRecords'].includes(functionName)) {
                             // Write operation - also update local mock
                             if (this.mockHandlers[functionName]) {
                                 resolve(this.mockHandlers[functionName](...args));
@@ -168,6 +168,13 @@ const api = {
             MOCK_DATA.problems.push(...problems);
             api.mockHandlers._persist();
             return { success: true, count: problems.length };
+        },
+        syncRecords: (records) => {
+            // records 배열 전체를 업데이트
+            MOCK_DATA.records = records;
+            api.mockHandlers._persist();
+            console.log("[MockAPI] Records synced and saved");
+            return { success: true };
         }
     }
 };

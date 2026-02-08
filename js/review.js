@@ -63,7 +63,10 @@ const Review = {
             <div style="max-width:100%; overflow-x:hidden; padding:0 20px; box-sizing:border-box;">
                 <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                     <p style="color:var(--text-secondary); margin:0;">총 ${wrongList.length}개의 틀린 문제가 있습니다.</p>
-                    <button class="btn btn-primary" onclick="Review.startReviewSession()">전체 다시 풀기</button>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="btn" style="background:#fee2e2; color:#b91c1c; border:1px solid #fecaca;" onclick="Review.resetAllWrongAnswers()">오답 초기화</button>
+                        <button class="btn btn-primary" onclick="Review.startReviewSession()">전체 다시 풀기</button>
+                    </div>
                 </div>
 
                 <div class="review-grid" style="display:grid; gap:15px;">
@@ -97,16 +100,10 @@ const Review = {
     },
 
     startReviewSession() {
-        // Create a custom session with these problems
-        const wrongMap = this.getWrongMap(); // Helper needed or re-calc
-        // For simplicity, just gather from DOM or re-calc. 
-        // Let's re-calc to be safe, I'll extract logic if needed.
-        // Or just reload page logic. 
-        // Ideally pass IDs.
-
-        // Quick verify:
+        // 오답 문제들을 모아서 다시 풀기 모드로 시작
         const records = MOCK_DATA.records || [];
         const pIds = new Set();
+
         records.forEach(r => {
             for (const [pId, ans] of Object.entries(r.userAnswers)) {
                 const p = MOCK_DATA.problems.find(x => x.problemId === pId);
@@ -117,11 +114,13 @@ const Review = {
         const problems = MOCK_DATA.problems.filter(p => pIds.has(p.problemId));
 
         if (problems.length === 0) {
-            alert("풀 문제가 없습니다.");
+            UI.modal.alert("풀 문제가 없습니다.");
             return;
         }
 
-        store.startExam(problems, 'review', '오답 노트 전체 복습');
+        // 'practice' 모드로 시작하여 실제로 문제를 다시 풀 수 있게 함
+        store.startExam(problems, 'practice', '오답 노트 전체 다시 풀기');
+        store.setState({ currentPage: 'exam_running', examMode: 'practice' });
         router.navigate('exam_running');
     },
 
@@ -131,8 +130,37 @@ const Review = {
         // It expects an array.
         const p = MOCK_DATA.problems.find(x => x.problemId === problemId);
         if (p) {
-            store.startExam([p], 'review', '오답 상세 보기');
+            store.startExam([p], 'practice', '오답 다시 풀기');
+            store.setState({ currentPage: 'exam_running', examMode: 'practice' });
             router.navigate('exam_running');
         }
+    },
+
+    async resetAllWrongAnswers() {
+        const confirmed = await UI.modal.confirm("정말로 오답 노트를 초기화하시겠습니까?\n모든 틀린 문제 기록이 삭제됩니다.");
+        if (!confirmed) return;
+
+        // 모든 records의 오답을 정답으로 변경하여 오답 노트에서 제외
+        if (MOCK_DATA.records) {
+            MOCK_DATA.records.forEach(record => {
+                if (record.userAnswers) {
+                    for (const [pId, ans] of Object.entries(record.userAnswers)) {
+                        const problem = MOCK_DATA.problems.find(p => p.problemId === pId);
+                        if (problem && ans !== problem.answer) {
+                            // 오답을 정답으로 변경
+                            record.userAnswers[pId] = problem.answer;
+                        }
+                    }
+                }
+            });
+
+            // 변경사항 저장
+            api.run('syncRecords', MOCK_DATA.records);
+        }
+
+        await UI.modal.alert("오답 노트가 초기화되었습니다.");
+
+        // 화면 새로고침
+        this.render();
     }
 };
