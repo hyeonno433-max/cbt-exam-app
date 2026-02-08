@@ -18,6 +18,44 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Router
     router.init();
 
+    // ========== 모바일 사이드바 토글 기능 ==========
+    const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+    function openSidebar() {
+        sidebar.classList.add('open');
+        sidebarOverlay.classList.add('open');
+        mobileMenuToggle.innerHTML = '<span class="material-icons-round">close</span>';
+        mobileMenuToggle.setAttribute('aria-label', '메뉴 닫기');
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('open');
+        mobileMenuToggle.innerHTML = '<span class="material-icons-round">menu</span>';
+        mobileMenuToggle.setAttribute('aria-label', '메뉴 열기');
+    }
+
+    if (mobileMenuToggle && sidebar && sidebarOverlay) {
+        mobileMenuToggle.addEventListener('click', () => {
+            if (sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // 화면 크기 변경 시 사이드바 상태 초기화
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 768) {
+                closeSidebar();
+            }
+        });
+    }
+
     // Event Listeners for Sidebar Navigation
     document.querySelectorAll('.menu-item').forEach(item => {
         item.addEventListener('click', async (e) => {
@@ -33,6 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     router.navigate(page);
                 }
                 return;
+            }
+
+            // 모바일에서 메뉴 선택 후 사이드바 닫기
+            if (window.innerWidth < 768) {
+                closeSidebar();
             }
 
             router.navigate(page);

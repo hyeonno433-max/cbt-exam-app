@@ -25,9 +25,17 @@
 </head>
 
 <body>
+    <!-- 모바일 메뉴 토글 버튼 -->
+    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="메뉴 열기">
+        <span class="material-icons-round">menu</span>
+    </button>
+
+    <!-- 사이드바 오버레이 (모바일) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
     <div id="app">
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="brand" style="cursor:pointer;" onclick="router.navigate('dashboard')">
                 <span class="material-icons-round">psychology</span>
                 <h1>모의고사 문제집</h1>
