@@ -3,7 +3,7 @@
  * Handles separation between local development and production environments.
  */
 const STORAGE_KEY = 'gemini_cbt_data_v1';
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxpAXACMrXchcSixEPnxeM3JtWRRYUbOT4lw0gO9oguU1fvuhm5gtDV5HjFSr2VAQA/exec';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzvcqcdnnWGYtznnn7VcHPaGfbFYeki60I9wHSijtuyO7ErGxhmsTzzmAM5EkzmIUEF/exec';
 
 // Set to true to use Google Sheets backend, false for localStorage only
 const USE_SHEETS_BACKEND = true;
