@@ -58,30 +58,28 @@ const router = {
 
 
 async function renderCBTAuth() {
-    // Get unique workbook titles
-    let problems = MOCK_DATA.problems;
+    const contentArea = document.getElementById('content-area');
+    contentArea.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>데이터 로딩 중...</p></div>';
+
+    // Firebase에서 문제 가져오기
+    const problems = await api.run('getProblems');
     const titles = [...new Set(problems.map(p => p.workbookTitle))];
 
     // Card Grid Layout (ID Card Style with Attempt Count)
 
-    // 1. Get History for Attempt Counts
-    let history = [];
+    // 1. Get History for Attempt Counts (from Firebase)
+    let records = [];
     try {
-        const storedHistory = localStorage.getItem('exam_history');
-        if (storedHistory) {
-            history = JSON.parse(storedHistory);
-            // Ensure it's an array
-            if (!Array.isArray(history)) history = [];
-        }
+        records = await api.run('getRecords') || [];
     } catch (e) {
-        console.error("Failed to load history", e);
+        console.error("Failed to load records", e);
     }
 
     // Count attempts per title
     const attemptCounts = {};
-    history.forEach(h => {
-        if (h.workbookTitle) {
-            attemptCounts[h.workbookTitle] = (attemptCounts[h.workbookTitle] || 0) + 1;
+    records.forEach(r => {
+        if (r.workbookTitle) {
+            attemptCounts[r.workbookTitle] = (attemptCounts[r.workbookTitle] || 0) + 1;
         }
     });
 
@@ -113,7 +111,7 @@ async function renderCBTAuth() {
         `;
     }).join('');
 
-    document.getElementById('content-area').innerHTML = `
+    contentArea.innerHTML = `
         <div style="max-width: 1600px; margin: 0 auto; padding: 0 20px;">
             <div style="text-align:center; margin-bottom:40px;">
                 <h2 style="margin-bottom:10px;">실전 모의고사 응시</h2>
@@ -134,12 +132,12 @@ function renderBulkUpload() {
     if (typeof BulkUpload !== 'undefined') BulkUpload.render();
 }
 
-/**
- * Render Full Study History Page
- */
-function renderFullHistory() {
-    // Use same data source as Dashboard
-    const records = MOCK_DATA.records || [];
+async function renderFullHistory() {
+    const contentArea = document.getElementById('content-area');
+    contentArea.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>데이터 로딩 중...</p></div>';
+
+    // Firebase에서 기록 가져오기
+    const records = await api.run('getRecords') || [];
 
     // Sort by date desc (most recent first)
     const sortedRecords = [...records].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -183,7 +181,7 @@ function renderFullHistory() {
         `;
     }
 
-    document.getElementById('content-area').innerHTML = `
+    contentArea.innerHTML = `
         <div class="card" style="max-width:1000px; margin:0 auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                 <h2><span class="material-icons-round" style="vertical-align:middle; margin-right:8px; color:var(--primary-color);">history</span>전체 학습 기록</h2>
