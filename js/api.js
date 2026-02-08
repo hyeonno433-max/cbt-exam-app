@@ -1,18 +1,20 @@
 /**
- * API Wrapper for Google Apps Script
+ * API Wrapper for Firebase Firestore
  * Handles separation between local development and production environments.
  */
 const STORAGE_KEY = 'gemini_cbt_data_v1';
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzvcqcdnnWGYtznnn7VcHPaGfbFYeki60I9wHSijtuyO7ErGxhmsTzzmAM5EkzmIUEF/exec';
 
-// Set to true to use Google Sheets backend, false for localStorage only
-const USE_SHEETS_BACKEND = false;
+// Set to true to use Firebase backend, false for localStorage only
+const USE_FIREBASE_BACKEND = true;
 
 const api = {
-    isProduction: typeof google !== 'undefined' && google.script,
-
     init: function () {
-        if (typeof MOCK_DATA !== 'undefined') {
+        // Firebase가 활성화되어 있으면 로컬 데이터를 Firebase와 동기화 시도
+        if (USE_FIREBASE_BACKEND && typeof db !== 'undefined') {
+            console.log("[Firebase API] Firebase backend enabled");
+            this.syncLocalToFirebase();
+        } else if (typeof MOCK_DATA !== 'undefined') {
+            // 로컬 개발 모드
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 try {
@@ -24,68 +26,44 @@ const api = {
                 } catch (e) {
                     console.error("Failed to load local data", e);
                 }
-            } else {
-                console.log("[MockAPI] No local data found, using defaults");
             }
+        }
+    },
+
+    // 로컬 데이터를 Firebase로 한 번 동기화 (마이그레이션용)
+    syncLocalToFirebase: async function () {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return;
+
+        try {
+            const parsed = JSON.parse(saved);
+            if (parsed.problems && parsed.problems.length > 0) {
+                // 이미 Firebase에 데이터가 있는지 확인
+                const snapshot = await db.collection('problems').limit(1).get();
+                if (snapshot.empty) {
+                    console.log("[Firebase API] Migrating local data to Firebase...");
+                    await this.firebaseHandlers.uploadProblems(parsed.problems);
+                    console.log("[Firebase API] Migration complete!");
+                }
+            }
+        } catch (e) {
+            console.error("[Firebase API] Migration error:", e);
         }
     },
 
     run: function (functionName, ...args) {
         return new Promise((resolve, reject) => {
-            // GAS iframe 환경 (Apps Script 내부에서 실행)
-            if (this.isProduction) {
-                google.script.run
-                    .withSuccessHandler(resolve)
-                    .withFailureHandler(reject)
-                [functionName](...args);
-            }
-            // GitHub Pages 등 외부에서 Sheets 백엔드 사용
-            else if (USE_SHEETS_BACKEND && GAS_WEB_APP_URL) {
-                const payload = {
-                    action: functionName,
-                    args: args
-                };
+            // Firebase 백엔드 사용
+            if (USE_FIREBASE_BACKEND && typeof db !== 'undefined') {
+                console.log(`[Firebase API] Calling ${functionName} with args:`, args);
 
-                fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'text/plain'
-                    },
-                    body: JSON.stringify(payload)
-                })
-                    .then(res => {
-                        // no-cors mode returns opaque response
-                        console.log(`[GAS API] ${functionName} sent (no-cors mode)`);
-                        // Since we can't read the response in no-cors mode,
-                        // we'll just assume success for write operations
-                        // and fallback to mock for read operations
-                        if (['uploadProblems', 'updateProblem', 'deleteProblem', 'deleteWorkbook',
-                            'updateWorkbookTitle', 'saveRecord', 'saveUserSettings', 'syncRecords'].includes(functionName)) {
-                            // Write operation - also update local mock
-                            if (this.mockHandlers[functionName]) {
-                                resolve(this.mockHandlers[functionName](...args));
-                            } else {
-                                resolve({ success: true });
-                            }
-                        } else {
-                            // Read operation - use mock data
-                            if (this.mockHandlers[functionName]) {
-                                resolve(this.mockHandlers[functionName](...args));
-                            } else {
-                                reject('Read operation failed in no-cors mode');
-                            }
-                        }
-                    })
-                    .catch(err => {
-                        console.error(`[GAS API] ${functionName} error:`, err);
-                        // Fallback to mock
-                        if (this.mockHandlers[functionName]) {
-                            resolve(this.mockHandlers[functionName](...args));
-                        } else {
-                            reject(err);
-                        }
-                    });
+                if (this.firebaseHandlers[functionName]) {
+                    this.firebaseHandlers[functionName](...args)
+                        .then(resolve)
+                        .catch(reject);
+                } else {
+                    reject(`Function ${functionName} not implemented for Firebase`);
+                }
             }
             // 로컬 개발 (Mock 데이터 사용)
             else {
@@ -99,6 +77,242 @@ const api = {
         });
     },
 
+    // Firebase Firestore 핸들러
+    firebaseHandlers: {
+        // 문제 목록 조회
+        getProblems: async (workbookTitle) => {
+            try {
+                let query = db.collection('problems');
+
+                if (workbookTitle) {
+                    query = query.where('workbookTitle', '==', workbookTitle);
+                }
+
+                const snapshot = await query.get();
+                const problems = [];
+
+                snapshot.forEach(doc => {
+                    problems.push({ problemId: doc.id, ...doc.data() });
+                });
+
+                console.log(`[Firebase] Loaded ${problems.length} problems`);
+                return problems;
+            } catch (e) {
+                console.error("[Firebase] getProblems error:", e);
+                return [];
+            }
+        },
+
+        // 문제 일괄 업로드
+        uploadProblems: async (problems) => {
+            try {
+                const batch = db.batch();
+
+                problems.forEach(p => {
+                    const id = p.problemId || `p-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    const docRef = db.collection('problems').doc(id);
+
+                    batch.set(docRef, {
+                        workbookTitle: p.workbookTitle || '',
+                        subject: p.subject || '',
+                        question: p.question || '',
+                        imageUrl: p.imageUrl || '',
+                        choices: p.choices || [],
+                        answer: parseInt(p.answer) || 1,
+                        explanation: p.explanation || '',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+
+                await batch.commit();
+                console.log(`[Firebase] Uploaded ${problems.length} problems`);
+                return { success: true, count: problems.length };
+            } catch (e) {
+                console.error("[Firebase] uploadProblems error:", e);
+                return { success: false, error: e.message };
+            }
+        },
+
+        // 문제 수정
+        updateProblem: async (data) => {
+            try {
+                await db.collection('problems').doc(data.id).update({
+                    subject: data.subject,
+                    question: data.question,
+                    choices: data.choices,
+                    answer: parseInt(data.answer),
+                    explanation: data.explanation || '',
+                    ...(data.imageUrl !== undefined && { imageUrl: data.imageUrl }),
+                    ...(data.workbookTitle && { workbookTitle: data.workbookTitle })
+                });
+
+                console.log(`[Firebase] Updated problem ${data.id}`);
+                return { success: true };
+            } catch (e) {
+                console.error("[Firebase] updateProblem error:", e);
+                return { success: false, error: e.message };
+            }
+        },
+
+        // 문제 삭제
+        deleteProblem: async (id) => {
+            try {
+                await db.collection('problems').doc(id).delete();
+                console.log(`[Firebase] Deleted problem ${id}`);
+                return { success: true };
+            } catch (e) {
+                console.error("[Firebase] deleteProblem error:", e);
+                return { success: false, error: e.message };
+            }
+        },
+
+        // 문제집 삭제 (해당 문제집의 모든 문제 삭제)
+        deleteWorkbook: async (title) => {
+            try {
+                const snapshot = await db.collection('problems')
+                    .where('workbookTitle', '==', title)
+                    .get();
+
+                const batch = db.batch();
+                snapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+
+                await batch.commit();
+                console.log(`[Firebase] Deleted workbook "${title}" (${snapshot.size} problems)`);
+                return { success: true, count: snapshot.size };
+            } catch (e) {
+                console.error("[Firebase] deleteWorkbook error:", e);
+                return { success: false, error: e.message };
+            }
+        },
+
+        // 문제집 제목 변경
+        updateWorkbookTitle: async (oldTitle, newTitle) => {
+            try {
+                const snapshot = await db.collection('problems')
+                    .where('workbookTitle', '==', oldTitle)
+                    .get();
+
+                const batch = db.batch();
+                snapshot.forEach(doc => {
+                    batch.update(doc.ref, { workbookTitle: newTitle });
+                });
+
+                await batch.commit();
+                console.log(`[Firebase] Renamed workbook "${oldTitle}" to "${newTitle}"`);
+                return { success: true };
+            } catch (e) {
+                console.error("[Firebase] updateWorkbookTitle error:", e);
+                return { success: false, error: e.message };
+            }
+        },
+
+        // 학습 기록 저장
+        saveRecord: async (record) => {
+            try {
+                const id = record.recordId || `r-${Date.now()}`;
+                await db.collection('records').doc(id).set({
+                    date: record.date || new Date().toISOString(),
+                    workbookTitle: record.workbookTitle || '',
+                    score: record.score || 0,
+                    totalProblems: record.totalProblems || 0,
+                    correctCount: record.correctCount || 0,
+                    wrongAnswers: record.wrongAnswers || [],
+                    subjectAnalysis: record.subjectAnalysis || {}
+                });
+
+                console.log(`[Firebase] Saved record ${id}`);
+                return { success: true };
+            } catch (e) {
+                console.error("[Firebase] saveRecord error:", e);
+                return { success: false, error: e.message };
+            }
+        },
+
+        // 학습 기록 조회
+        getRecords: async () => {
+            try {
+                const snapshot = await db.collection('records')
+                    .orderBy('date', 'desc')
+                    .get();
+
+                const records = [];
+                snapshot.forEach(doc => {
+                    records.push({ recordId: doc.id, ...doc.data() });
+                });
+
+                console.log(`[Firebase] Loaded ${records.length} records`);
+                return records;
+            } catch (e) {
+                console.error("[Firebase] getRecords error:", e);
+                return [];
+            }
+        },
+
+        // 사용자 설정 조회
+        getUserSettings: async () => {
+            try {
+                const doc = await db.collection('settings').doc('user').get();
+                if (doc.exists) {
+                    return doc.data();
+                }
+                // 기본값 반환
+                return { dDay: '2026-12-31', userName: '수험생' };
+            } catch (e) {
+                console.error("[Firebase] getUserSettings error:", e);
+                return { dDay: '2026-12-31', userName: '수험생' };
+            }
+        },
+
+        // 사용자 설정 저장
+        saveUserSettings: async (settings) => {
+            try {
+                await db.collection('settings').doc('user').set(settings, { merge: true });
+                console.log("[Firebase] Saved user settings");
+                return { success: true };
+            } catch (e) {
+                console.error("[Firebase] saveUserSettings error:", e);
+                return { success: false, error: e.message };
+            }
+        },
+
+        // 기록 동기화 (전체 교체)
+        syncRecords: async (records) => {
+            try {
+                // 기존 기록 삭제
+                const snapshot = await db.collection('records').get();
+                const batch = db.batch();
+                snapshot.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+
+                // 새 기록 추가
+                const newBatch = db.batch();
+                records.forEach(r => {
+                    const id = r.recordId || `r-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+                    const docRef = db.collection('records').doc(id);
+                    newBatch.set(docRef, {
+                        date: r.date,
+                        workbookTitle: r.workbookTitle,
+                        score: r.score,
+                        totalProblems: r.totalProblems,
+                        correctCount: r.correctCount,
+                        wrongAnswers: r.wrongAnswers || [],
+                        subjectAnalysis: r.subjectAnalysis || {}
+                    });
+                });
+                await newBatch.commit();
+
+                console.log(`[Firebase] Synced ${records.length} records`);
+                return { success: true };
+            } catch (e) {
+                console.error("[Firebase] syncRecords error:", e);
+                return { success: false, error: e.message };
+            }
+        }
+    },
+
+    // 로컬 Mock 핸들러 (백업용)
     mockHandlers: {
         _persist: () => {
             try {
@@ -115,7 +329,6 @@ const api = {
             return MOCK_DATA.problems.filter(p => p.workbookTitle === workbookTitle);
         },
         saveRecord: (record) => {
-            console.log("Record saved:", record);
             MOCK_DATA.records.push(record);
             api.mockHandlers._persist();
             return { success: true };
@@ -141,7 +354,7 @@ const api = {
                 p.choices = data.choices;
                 p.answer = parseInt(data.answer);
                 p.explanation = data.explanation;
-                if (data.imageUrl !== undefined) p.imageUrl = data.imageUrl; // Update image if provided
+                if (data.imageUrl !== undefined) p.imageUrl = data.imageUrl;
                 api.mockHandlers._persist();
             }
             return { success: true };
@@ -170,10 +383,8 @@ const api = {
             return { success: true, count: problems.length };
         },
         syncRecords: (records) => {
-            // records 배열 전체를 업데이트
             MOCK_DATA.records = records;
             api.mockHandlers._persist();
-            console.log("[MockAPI] Records synced and saved");
             return { success: true };
         }
     }

@@ -34,7 +34,16 @@ const BulkUpload = {
                     </div>
 
                     <textarea id="bulk-text" style="width:100%; height:300px; padding:10px; border:1px solid var(--border-color); border-radius:var(--radius-md); font-family:monospace; line-height:1.5;" 
-                        placeholder="여기에 텍스트를 입력하거나 이미지를 붙여넣기(Ctrl+V) 하세요." 
+                        placeholder="[문제집] 2024년 1회
+[과목] 공기조화
+[문제] 1. 문제 내용을 입력하세요
+[보기]
+① 보기1
+② 보기2
+③ 보기3
+④ 보기4
+[답] 1
+[해설] 해설 내용" 
                         oninput="BulkUpload.autoCorrect(this)" 
                         onpaste="BulkUpload.handlePaste(event)"></textarea>
                     
@@ -232,8 +241,8 @@ const BulkUpload = {
 
     parseText() {
         const text = document.getElementById('bulk-text').value;
+        let currentWorkbook = document.getElementById('upload-year-round').value.trim();
         let currentSubject = document.getElementById('upload-subject').value.trim();
-        const yearRound = document.getElementById('upload-year-round').value.trim();
 
         if (!text) {
             UI.modal.alert("텍스트를 입력해주세요.");
@@ -243,7 +252,7 @@ const BulkUpload = {
         // 1. Pre-processing: Standardize input
         let processedText = text
             .replace(/[￦₩]/g, '\\') // Fix Korean Won symbol to backslash for LaTeX compatibility
-            .replace(/(\[(문제|보기|답|정답|해설|풀이)\])/g, '\n$1'); // Ensure tags are on new lines
+            .replace(/(\[(문제집|과목|문제|보기|답|정답|해설|풀이)\])/g, '\n$1'); // Ensure tags are on new lines
 
         const cleanLines = processedText.split('\n').map(line => {
             return line.trim();
@@ -252,27 +261,24 @@ const BulkUpload = {
         const parsedResults = [];
 
         let currentProblem = null;
-        let state = 'NONE'; // NONE, QUESTION, EXPLANATION
+        let state = 'NONE'; // NONE, QUESTION, CHOICES, EXPLANATION
 
-        // Regex definitions
-        const subjectRegex = /^(제?\d+과목)[:\s]+(.+)/;
-        // Matches "[문제] 1. text" or just "1. text" (fallback) or "[문제] text"
-        const questionTagRegex = /^\[문제\]\s*(\d+)?\.?\s*(.*)/;
-
-        // Matches "[보기] ① ... ② ..." or just "① ..."
+        // Regex definitions for new format
+        const workbookTagRegex = /^\[문제집\]\s*(.+)/;
+        const subjectTagRegex = /^\[과목\]\s*(.+)/;
+        const questionTagRegex = /^\[문제\]\s*(\d+)?\s*\.?\s*(.*)/;
         const choiceTagRegex = /^\[보기\]\s*(.*)/;
-
-        // Matches "[답] 4" or "[정답] ④"
         const answerTagRegex = /^\[(답|정답)\]\s*(\d+|[①②③④])/;
-
-        // Matches "[해설] ..."
         const explanationTagRegex = /^\[(해설|풀이)\]\s*(.*)/;
 
         const saveCurrentProblem = () => {
             if (currentProblem) {
-                // If answer is missing, default to 0
-                if (!currentProblem.answer) currentProblem.answer = 0;
-
+                // If answer is missing, default to 1
+                if (!currentProblem.answer) currentProblem.answer = 1;
+                // Ensure we have 4 choices
+                while (currentProblem.choices.length < 4) {
+                    currentProblem.choices.push('');
+                }
                 parsedResults.push(currentProblem);
                 currentProblem = null;
             }
@@ -281,29 +287,33 @@ const BulkUpload = {
         for (let i = 0; i < cleanLines.length; i++) {
             const line = cleanLines[i];
 
-            // 1. Check for Subject Change (e.g. "제1과목: ...")
-            const subjMatch = line.match(subjectRegex);
-            if (subjMatch) {
-                saveCurrentProblem();
-                currentSubject = subjMatch[2].trim();
-                document.getElementById('upload-subject').value = currentSubject;
-                state = 'NONE';
+            // 1. Check for Workbook Tag [문제집]
+            const workbookMatch = line.match(workbookTagRegex);
+            if (workbookMatch) {
+                currentWorkbook = workbookMatch[1].trim();
+                document.getElementById('upload-year-round').value = currentWorkbook;
                 continue;
             }
 
-            // 2. Check for Question Start
-            // Case A: Tag [문제]
+            // 2. Check for Subject Tag [과목]
+            const subjectMatch = line.match(subjectTagRegex);
+            if (subjectMatch) {
+                currentSubject = subjectMatch[1].trim();
+                document.getElementById('upload-subject').value = currentSubject;
+                continue;
+            }
+
+            // 3. Check for Question Tag [문제]
             const qTagMatch = line.match(questionTagRegex);
             if (qTagMatch) {
                 saveCurrentProblem();
 
                 let qText = qTagMatch[2] || '';
-                // If text starts with number like "1. ", remove it if needed, or keep it.
-                // User input: "[문제] 1. ..." -> qTagMatch[2] is "1. ..."
+                // If text is empty, look for the question text on next lines
 
                 currentProblem = {
                     problemId: 'new-' + Date.now() + Math.random().toString(36).substr(2, 5),
-                    workbookTitle: yearRound || '미분류 회차',
+                    workbookTitle: currentWorkbook || '미분류 회차',
                     subject: currentSubject || '미분류 과목',
                     question: qText,
                     choices: [],
@@ -316,47 +326,16 @@ const BulkUpload = {
                 continue;
             }
 
-            // Case B: No tag, just starts with digit (Legacy support)
-            // Only if we are not inside a known block that consumes digits differently (like explanation potentially? no usually exps are text)
-            // But be careful not to match "1. " inside explanation.
-            // Strict check: if line starts with "\d+." and we are NOT in QUESTION/CHOICE state, OR we assume new question start?
-            // Safer to rely on tags if possible. 
-            // Only use fallback if currentProblem is null or we are in NONE state.
-            if ((!currentProblem || state === 'NONE') && /^\d+\./.test(line)) {
-                saveCurrentProblem();
-                const qText = line.replace(/^\d+\.\s*/, '');
-                currentProblem = {
-                    problemId: 'new-' + Date.now() + Math.random().toString(36).substr(2, 5),
-                    workbookTitle: yearRound || '미분류 회차',
-                    subject: currentSubject || '미분류 과목',
-                    question: qText,
-                    choices: [],
-                    answer: 0,
-                    explanation: '',
-                    creatorId: 'user-upload'
-                };
-                state = 'QUESTION';
-                continue;
-            }
-
-            // 3. Parsing while inside a problem
-            if (!currentProblem) continue;
-
-            // Check for Choices Tag [보기]
+            // 4. Check for Choices Tag [보기]
             const choiceTagMatch = line.match(choiceTagRegex);
             if (choiceTagMatch) {
                 state = 'CHOICES';
                 const content = choiceTagMatch[1];
-                // Parse inline choices: ① A ② B ③ C ④ D
-                // Use a regex to split but keep delimiters, then reconstruct.
-                // Simple approach: split by circle numbers.
 
-                // Note: content might be empty if [보기] is on one line and choices on next.
+                // If there's inline content, parse it
                 if (content.trim().length > 0) {
                     const splitRegex = /([①②③④])/;
                     const parts = content.split(splitRegex);
-                    // parts: ["", "①", " text ", "②", " text "...]
-
                     let currentIdx = -1;
                     for (let p of parts) {
                         if (p === '①') currentIdx = 0;
@@ -364,16 +343,16 @@ const BulkUpload = {
                         else if (p === '③') currentIdx = 2;
                         else if (p === '④') currentIdx = 3;
                         else if (currentIdx !== -1 && p.trim().length > 0) {
-                            currentProblem.choices[currentIdx] = p.trim();
+                            if (currentProblem) currentProblem.choices[currentIdx] = p.trim();
                         }
                     }
                 }
                 continue;
             }
 
-            // Check for Answer Tag [답]
+            // 5. Check for Answer Tag [답]
             const ansMatch = line.match(answerTagRegex);
-            if (ansMatch) {
+            if (ansMatch && currentProblem) {
                 const ansStr = ansMatch[2];
                 if (['1', '①'].includes(ansStr)) currentProblem.answer = 1;
                 else if (['2', '②'].includes(ansStr)) currentProblem.answer = 2;
@@ -383,22 +362,31 @@ const BulkUpload = {
                 continue;
             }
 
-            // Check for Explanation Tag [해설]
+            // 6. Check for Explanation Tag [해설]
             const expMatch = line.match(explanationTagRegex);
-            if (expMatch) {
+            if (expMatch && currentProblem) {
                 currentProblem.explanation = expMatch[2];
                 state = 'EXPLANATION';
                 continue;
             }
 
-            // 4. Continued Text (Multi-line parsing)
+            // 7. Continued Text (Multi-line parsing)
+            if (!currentProblem) continue;
+
             if (state === 'QUESTION') {
-                currentProblem.question += ' ' + line;
+                // Append to question
+                if (currentProblem.question) {
+                    currentProblem.question += ' ' + line;
+                } else {
+                    currentProblem.question = line;
+                }
             } else if (state === 'EXPLANATION') {
                 currentProblem.explanation += ' ' + line;
             } else if (state === 'CHOICES') {
-                // Check if line starts with circle number
+                // Check if line starts with circle number or plain number
                 const circleMatch = line.match(/^([①②③④])\s*(.*)/);
+                const numberMatch = line.match(/^(\d)\s*[\.\)]\s*(.*)/);
+
                 if (circleMatch) {
                     const idxStr = circleMatch[1];
                     const val = circleMatch[2];
@@ -407,13 +395,15 @@ const BulkUpload = {
                     else if (idxStr === '②') idx = 1;
                     else if (idxStr === '③') idx = 2;
                     else if (idxStr === '④') idx = 3;
-
                     if (idx !== -1) currentProblem.choices[idx] = val;
+                } else if (numberMatch) {
+                    const numIdx = parseInt(numberMatch[1]) - 1;
+                    const val = numberMatch[2];
+                    if (numIdx >= 0 && numIdx < 4) {
+                        currentProblem.choices[numIdx] = val;
+                    }
                 } else {
-                    // Probably continuation of the last choice
-                    // But which one? Assume the last one added.
-                    // Or separate logic if it's inline.
-                    // For now, if we have choices, append to the last one.
+                    // Continuation of last choice
                     let lastIdx = currentProblem.choices.length - 1;
                     if (lastIdx >= 0) {
                         currentProblem.choices[lastIdx] += ' ' + line;
@@ -422,11 +412,11 @@ const BulkUpload = {
             }
         }
 
-        // Save last
+        // Save last problem
         saveCurrentProblem();
 
         if (parsedResults.length === 0) {
-            UI.modal.alert("파싱된 문제가 없습니다.\n1. 문제 형식이 올바른지 확인해주세요.");
+            UI.modal.alert("파싱된 문제가 없습니다.\n\n올바른 형식 예시:\n[문제집] 2024년 1회\n[과목] 공기조화\n[문제] 1. 문제 내용\n[보기]\n① 보기1\n② 보기2\n③ 보기3\n④ 보기4\n[답] 1\n[해설] 해설 내용");
         }
 
         this.parsedData = parsedResults;
