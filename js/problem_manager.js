@@ -5,11 +5,12 @@
 const ProblemManager = {
     currentWorkbook: null,
 
-    render() {
+    async render() {
         const contentArea = document.getElementById('content-area');
+        contentArea.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>데이터 로딩 중...</p></div>';
 
-        // Fetch all unique workbooks
-        const problems = api.mockHandlers.getProblems();
+        // Fetch all unique workbooks from Firebase
+        const problems = await api.run('getProblems');
         const titles = [...new Set(problems.map(p => p.workbookTitle))];
         const optionsHtml = titles.map(t => `<option value="${t}">${t}</option>`).join('');
 
@@ -33,7 +34,7 @@ const ProblemManager = {
         `;
     },
 
-    loadProblems(workbookTitle) {
+    async loadProblems(workbookTitle) {
         this.currentWorkbook = workbookTitle;
         const listArea = document.getElementById('manage-list-area');
 
@@ -42,7 +43,8 @@ const ProblemManager = {
             return;
         }
 
-        const problems = api.mockHandlers.getProblems(workbookTitle);
+        listArea.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>문제 로딩 중...</p></div>';
+        const problems = await api.run('getProblems', workbookTitle);
 
         if (problems.length === 0) {
             listArea.innerHTML = '<p style="text-align:center; color:var(--text-secondary);">해당 회차에 문제가 없습니다.</p>';
@@ -104,8 +106,8 @@ const ProblemManager = {
         }
     },
 
-    editProblem(problemId) {
-        const problems = api.mockHandlers.getProblems();
+    async editProblem(problemId) {
+        const problems = await api.run('getProblems');
         const p = problems.find(prob => prob.problemId === problemId);
         if (!p) return;
 

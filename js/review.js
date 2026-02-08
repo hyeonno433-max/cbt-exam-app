@@ -1,28 +1,37 @@
 /**
  * Review Module (Incorrect Answer Note)
+ * Firebase API 사용하도록 수정됨
  */
 const Review = {
-    render() {
-        const records = MOCK_DATA.records || [];
+    // 캐시된 데이터
+    cachedRecords: [],
+    cachedProblems: [],
+
+    async render() {
         const contentArea = document.getElementById('content-area');
+        contentArea.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>데이터 로딩 중...</p></div>';
+
+        // Firebase에서 데이터 가져오기
+        const [records, problems] = await Promise.all([
+            api.run('getRecords'),
+            api.run('getProblems')
+        ]);
+
+        this.cachedRecords = records || [];
+        this.cachedProblems = problems || [];
 
         // 1. Collect all wrong answers
         // Map: ProblemID -> { problem, wrongCount, lastWrongDate }
         const wrongMap = new Map();
 
-        records.forEach(record => {
+        this.cachedRecords.forEach(record => {
             const date = new Date(record.date);
-            // Iterate over all problems in this record's scope? 
-            // Actually record doesn't store problems, just userAnswers and subjectAnalysis?
-            // Wait, record has `userAnswers`. We need to match with `problems` from `MOCK_DATA.problems`.
-            // Issues: Problems might change if from different workbooks.
-            // But `MOCK_DATA.problems` has all problems.
 
-            // We need to find problems that were answered incorrectly in this record
+            if (!record.userAnswers) return;
 
             for (const [pId, answer] of Object.entries(record.userAnswers)) {
                 // Find problem in DB
-                const problem = MOCK_DATA.problems.find(p => p.problemId === pId);
+                const problem = this.cachedProblems.find(p => p.problemId === pId);
                 if (problem) {
                     if (answer !== problem.answer) {
                         // It's a wrong answer
@@ -99,19 +108,28 @@ const Review = {
         `;
     },
 
-    startReviewSession() {
-        // 오답 문제들을 모아서 다시 풀기 모드로 시작
-        const records = MOCK_DATA.records || [];
+    async startReviewSession() {
+        // 캐시된 데이터 사용 (없으면 다시 로드)
+        if (this.cachedRecords.length === 0 || this.cachedProblems.length === 0) {
+            const [records, problems] = await Promise.all([
+                api.run('getRecords'),
+                api.run('getProblems')
+            ]);
+            this.cachedRecords = records || [];
+            this.cachedProblems = problems || [];
+        }
+
         const pIds = new Set();
 
-        records.forEach(r => {
+        this.cachedRecords.forEach(r => {
+            if (!r.userAnswers) return;
             for (const [pId, ans] of Object.entries(r.userAnswers)) {
-                const p = MOCK_DATA.problems.find(x => x.problemId === pId);
+                const p = this.cachedProblems.find(x => x.problemId === pId);
                 if (p && p.answer !== ans) pIds.add(pId);
             }
         });
 
-        const problems = MOCK_DATA.problems.filter(p => pIds.has(p.problemId));
+        const problems = this.cachedProblems.filter(p => pIds.has(p.problemId));
 
         if (problems.length === 0) {
             UI.modal.alert("풀 문제가 없습니다.");
@@ -124,11 +142,13 @@ const Review = {
         router.navigate('exam_running');
     },
 
-    openProblemDetail(problemId) {
-        // Start a single problem review or scroll to it?
-        // Let's verify if Exam module handles single problem?
-        // It expects an array.
-        const p = MOCK_DATA.problems.find(x => x.problemId === problemId);
+    async openProblemDetail(problemId) {
+        // 캐시된 문제 사용 (없으면 로드)
+        if (this.cachedProblems.length === 0) {
+            this.cachedProblems = await api.run('getProblems');
+        }
+
+        const p = this.cachedProblems.find(x => x.problemId === problemId);
         if (p) {
             store.startExam([p], 'practice', '오답 다시 풀기');
             store.setState({ currentPage: 'exam_running', examMode: 'practice' });
@@ -140,23 +160,31 @@ const Review = {
         const confirmed = await UI.modal.confirm("정말로 오답 노트를 초기화하시겠습니까?\n모든 틀린 문제 기록이 삭제됩니다.");
         if (!confirmed) return;
 
+        // 캐시된 데이터 사용 (없으면 로드)
+        if (this.cachedRecords.length === 0 || this.cachedProblems.length === 0) {
+            const [records, problems] = await Promise.all([
+                api.run('getRecords'),
+                api.run('getProblems')
+            ]);
+            this.cachedRecords = records || [];
+            this.cachedProblems = problems || [];
+        }
+
         // 모든 records의 오답을 정답으로 변경하여 오답 노트에서 제외
-        if (MOCK_DATA.records) {
-            MOCK_DATA.records.forEach(record => {
-                if (record.userAnswers) {
-                    for (const [pId, ans] of Object.entries(record.userAnswers)) {
-                        const problem = MOCK_DATA.problems.find(p => p.problemId === pId);
-                        if (problem && ans !== problem.answer) {
-                            // 오답을 정답으로 변경
-                            record.userAnswers[pId] = problem.answer;
-                        }
+        this.cachedRecords.forEach(record => {
+            if (record.userAnswers) {
+                for (const [pId, ans] of Object.entries(record.userAnswers)) {
+                    const problem = this.cachedProblems.find(p => p.problemId === pId);
+                    if (problem && ans !== problem.answer) {
+                        // 오답을 정답으로 변경
+                        record.userAnswers[pId] = problem.answer;
                     }
                 }
-            });
+            }
+        });
 
-            // 변경사항 저장
-            api.run('syncRecords', MOCK_DATA.records);
-        }
+        // Firebase에 저장
+        await api.run('syncRecords', this.cachedRecords);
 
         await UI.modal.alert("오답 노트가 초기화되었습니다.");
 

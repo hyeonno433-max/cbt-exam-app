@@ -16,10 +16,9 @@ const Exam = {
         });
     },
 
-    start(mode, workbookTitle) {
-        // Find workbook or use all
-        // For now, mockHandlers.getProblems filters by title if provided
-        const problems = api.mockHandlers.getProblems(workbookTitle);
+    async start(mode, workbookTitle) {
+        // Find workbook from Firebase
+        const problems = await api.run('getProblems', workbookTitle);
 
         if (!problems || problems.length === 0) {
             UI.modal.alert("선택한 회차에 문제가 없습니다.");
@@ -331,22 +330,26 @@ const Exam = {
             if (isCorrect) subjectScores[p.subject].correct++;
         });
 
-        // 🎯 정답 맞춘 문제를 오답 기록에서 제거
-        if (correctProblemIds.length > 0 && MOCK_DATA.records) {
-            MOCK_DATA.records.forEach(record => {
-                if (record.userAnswers) {
-                    correctProblemIds.forEach(pId => {
-                        // 해당 문제의 오답 기록 삭제 (정답으로 업데이트)
-                        const problem = MOCK_DATA.problems.find(p => p.problemId === pId);
-                        if (problem && record.userAnswers[pId] !== undefined) {
-                            // 정답으로 업데이트하여 오답 노트에서 제외되도록 함
-                            record.userAnswers[pId] = problem.answer;
+        // 🎯 정답 맞춘 문제를 오답 기록에서 제거 (비동기로 처리)
+        if (correctProblemIds.length > 0) {
+            // Firebase에서 기존 기록 가져오기
+            api.run('getRecords').then(records => {
+                if (!records || records.length === 0) return;
+
+                api.run('getProblems').then(allProblems => {
+                    records.forEach(record => {
+                        if (record.userAnswers) {
+                            correctProblemIds.forEach(pId => {
+                                const problem = allProblems.find(p => p.problemId === pId);
+                                if (problem && record.userAnswers[pId] !== undefined) {
+                                    record.userAnswers[pId] = problem.answer;
+                                }
+                            });
                         }
                     });
-                }
+                    api.run('syncRecords', records);
+                });
             });
-            // 변경사항 저장
-            api.run('syncRecords', MOCK_DATA.records);
         }
 
         const score = Math.round((correctCount / totalProblems) * 100);
@@ -622,16 +625,14 @@ const Exam = {
         this.startReview(userAnswers, problems);
     },
 
-    reviewHistoryRecord(record) {
+    async reviewHistoryRecord(record) {
         if (!record || !record.userAnswers) {
             UI.modal.alert("이 회차의 문제 정보를 찾을 수 없습니다.");
             return;
         }
 
-        // We need to find the problem objects
-        // Since we don't store full problem objects in history, we look them up by ID from MOCK_DATA
-        // MOCK_DATA.problems is available globally
-        const allProblems = MOCK_DATA.problems;
+        // Firebase에서 문제 데이터 가져오기
+        const allProblems = await api.run('getProblems');
         const wrongProblems = [];
         const userAnswers = record.userAnswers;
 

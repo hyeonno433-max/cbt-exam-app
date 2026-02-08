@@ -2,10 +2,25 @@
  * Dashboard & Analytics Module
  */
 const Dashboard = {
-    render() {
-        // 1. Fetch Data
-        const user = MOCK_DATA.user;
-        const records = MOCK_DATA.records || [];
+    // 캐시된 데이터
+    cachedRecords: [],
+    cachedSettings: null,
+
+    async render() {
+        const contentArea = document.getElementById('content-area');
+        contentArea.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>데이터 로딩 중...</p></div>';
+
+        // 1. Fetch Data from Firebase
+        const [records, settings] = await Promise.all([
+            api.run('getRecords'),
+            api.run('getUserSettings')
+        ]);
+
+        // 캐시 업데이트
+        this.cachedRecords = records || [];
+        this.cachedSettings = settings || { dDay: '2026-12-31', userName: '수험생' };
+
+        const user = { name: this.cachedSettings.userName || '수험생', settings: this.cachedSettings };
 
         // 2. Calculate Stats
         const totalExams = records.length;
@@ -21,8 +36,8 @@ const Dashboard = {
 
         records.forEach(r => {
             totalScore += r.score;
-            totalProblemsSolved += r.totalCount;
-            correctProblems += r.correctCount;
+            totalProblemsSolved += r.totalCount || r.totalProblems || 0;
+            correctProblems += r.correctCount || 0;
 
             if (r.subjectAnalysis) {
                 for (const [subj, data] of Object.entries(r.subjectAnalysis)) {
@@ -37,13 +52,12 @@ const Dashboard = {
 
         // Calculate D-Day
         const today = new Date();
-        const dDayDate = new Date(user.settings.dDay);
+        const dDayDate = new Date(this.cachedSettings.dDay);
         const diffTime = dDayDate - today;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const dDayLabel = diffDays > 0 ? `D-${diffDays}` : (diffDays === 0 ? "D-Day" : `D+${Math.abs(diffDays)}`);
 
         // 3. Render
-        const contentArea = document.getElementById('content-area');
         contentArea.innerHTML = `
             <div class="dashboard-header" style="margin-bottom:30px;">
                 <h2>반갑습니다, ${user.name}님!</h2>
@@ -60,7 +74,7 @@ const Dashboard = {
                         <div style="font-size:1.1rem;">시험까지</div>
                         <div style="margin-top:18px; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
                             <span class="material-icons-round" style="font-size:18px;">calendar_today</span>
-                            ${user.settings.dDay}
+                            ${this.cachedSettings.dDay}
                             <span class="material-icons-round" style="font-size:18px; margin-left:auto;">edit</span>
                         </div>
                     </div>
@@ -235,7 +249,7 @@ const Dashboard = {
     },
 
     editDDay() {
-        const currentDate = MOCK_DATA.user.settings.dDay;
+        const currentDate = this.cachedSettings?.dDay || '2026-12-31';
 
         // Create modal content with date input
         const modalContent = `
@@ -256,14 +270,16 @@ const Dashboard = {
         document.getElementById('modal-overlay').classList.remove('hidden');
     },
 
-    saveDDay() {
+    async saveDDay() {
         const newDate = document.getElementById('dday-input').value;
         if (newDate) {
-            // Update MOCK_DATA
-            MOCK_DATA.user.settings.dDay = newDate;
+            // Update Firebase
+            await api.run('saveUserSettings', { dDay: newDate });
 
-            // Save to localStorage
-            localStorage.setItem('cbt_dday', newDate);
+            // Update cache
+            if (this.cachedSettings) {
+                this.cachedSettings.dDay = newDate;
+            }
 
             // Close modal and re-render dashboard
             document.getElementById('modal-overlay').classList.add('hidden');
